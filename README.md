@@ -6,22 +6,21 @@ The analog circuit in memristor-based SNN chip is susceptive to the process vari
 
 ## Usage
 
-1. Run training of ideal SNN
+1. Run training and inference of ideal SNN
 ```
 $ python snn_ideal.py --train
-```
-
-2. Run inference of ideal SNN with pre-trained model
-```
 $ python snn_ideal.py --load model_ideal.pkl
 ```
 
-3. Run training of hardware-aware SNN
+2. Run training and inference of quantized SNN
 ```
-$ python snn_hardware_aware.py --train
+$ python snn_quantization.py --train
+$ python snn_quantization.py --load model_quantization.pkl
 ```
 
-4. Run inference of hardware-aware SNN with pre-trained model
+3. Run training and inference of hardware-aware SNN
 ```
+$ python snn_hardware_aware.py --train
 $ python snn_hardware_aware.py --load model_hardware_aware.pkl
 ```
+
