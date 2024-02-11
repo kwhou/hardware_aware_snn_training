@@ -178,11 +178,9 @@ def train(model, device, train_loader, optimizer, epoch):
         optimizer.zero_grad()
         spike_data = encoding(data)
         output = model(spike_data).permute(1, 0, 2)
-        # output = torch.sum(output, dim=0) / TS
-        output = output[-1,:]
-        # label = one_hot_encode(target, model.module.num_classes).to(device)
-        # loss = F.mse_loss(output, label, reduction='mean')
-        loss = F.cross_entropy(output, target)
+        output = torch.sum(output, dim=0) / TS
+        label = one_hot_encode(target, model.module.num_classes).to(device)
+        loss = F.mse_loss(output, label, reduction='mean')
 
         optimizer.zero_grad()
         loss.backward()
