@@ -55,10 +55,10 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(device)
 
 # Load dataset
-train_images = torch.Tensor(np.load('./data/DRINK/train-images.npy'))
-train_labels = torch.LongTensor(np.load('./data/DRINK/train-labels.npy'))
-test_images = torch.Tensor(np.load('./data/DRINK/test-images.npy'))
-test_labels = torch.LongTensor(np.load('./data/DRINK/test-labels.npy'))
+train_images = torch.Tensor(np.load('./dataset/DRINK/train-images.npy'))
+train_labels = torch.LongTensor(np.load('./dataset/DRINK/train-labels.npy'))
+test_images = torch.Tensor(np.load('./dataset/DRINK/test-images.npy'))
+test_labels = torch.LongTensor(np.load('./dataset/DRINK/test-labels.npy'))
 
 train_dataset = data.TensorDataset(train_images, train_labels)
 train_loader = data.DataLoader(train_dataset, batch_size=BS, shuffle=True)
@@ -166,8 +166,8 @@ def encoding(img):
     Sout = torch.stack(Sout_list, dim=0).permute(1, 0, 2, 3, 4)
     return Sout
 
-def one_hot_encode(labels, num_classes):
-    y = torch.eye(num_classes)
+def one_hot_encode(labels, num_classes, device):
+    y = torch.eye(num_classes).to(device)
     return y[labels]
 
 def train(model, device, train_loader, optimizer, epoch):
@@ -179,7 +179,7 @@ def train(model, device, train_loader, optimizer, epoch):
         spike_data = encoding(data)
         output = model(spike_data).permute(1, 0, 2)
         output = torch.sum(output, dim=0) / TS
-        label = one_hot_encode(target, model.module.num_classes).to(device)
+        label = one_hot_encode(target, model.module.num_classes, device)
         loss = F.mse_loss(output, label, reduction='mean')
 
         optimizer.zero_grad()

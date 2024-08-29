@@ -85,10 +85,10 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(device)
 
 # Load dataset
-train_images = torch.Tensor(np.load('./data/DRINK/train-images.npy'))
-train_labels = torch.LongTensor(np.load('./data/DRINK/train-labels.npy'))
-test_images = torch.Tensor(np.load('./data/DRINK/test-images.npy'))
-test_labels = torch.LongTensor(np.load('./data/DRINK/test-labels.npy'))
+train_images = torch.Tensor(np.load('./dataset/DRINK/train-images.npy'))
+train_labels = torch.LongTensor(np.load('./dataset/DRINK/train-labels.npy'))
+test_images = torch.Tensor(np.load('./dataset/DRINK/test-images.npy'))
+test_labels = torch.LongTensor(np.load('./dataset/DRINK/test-labels.npy'))
 
 train_dataset = data.TensorDataset(train_images, train_labels)
 train_loader = data.DataLoader(train_dataset, batch_size=BS, shuffle=True)
@@ -97,15 +97,15 @@ test_dataset = data.TensorDataset(test_images, test_labels)
 test_loader = data.DataLoader(test_dataset, batch_size=BS, shuffle=False)
 
 if CORNER == 'ff':
-    dv_table = torch.tensor(np.load('dv_table_ff.npy'), device=device)
+    dv_table = torch.tensor(np.load('./dv_table/dv_table_ff.npy'), device=device)
 elif CORNER == 'ss':
-    dv_table = torch.tensor(np.load('dv_table_ss.npy'), device=device)
+    dv_table = torch.tensor(np.load('./dv_table/dv_table_ss.npy'), device=device)
 elif CORNER == 'fs':
-    dv_table = torch.tensor(np.load('dv_table_fs.npy'), device=device)
+    dv_table = torch.tensor(np.load('./dv_table/dv_table_fs.npy'), device=device)
 elif CORNER == 'sf':
-    dv_table = torch.tensor(np.load('dv_table_sf.npy'), device=device)
+    dv_table = torch.tensor(np.load('./dv_table/dv_table_sf.npy'), device=device)
 else:
-    dv_table = torch.tensor(np.load('dv_table_tt.npy'), device=device)
+    dv_table = torch.tensor(np.load('./dv_table/dv_table_tt.npy'), device=device)
 
 def compute_threshold(w):
     # weight size: (out_channels, in_channels, kernel_height, kernel_width)
@@ -332,8 +332,8 @@ def encoding(img, TS):
     Sout = torch.stack(Sout_list, dim=1)
     return Sout
 
-def one_hot_encode(labels, num_classes):
-    y = torch.eye(num_classes)
+def one_hot_encode(labels, num_classes, device):
+    y = torch.eye(num_classes).to(device)
     return y[labels]
 
 def train(model, device, train_loader, optimizer, epoch):
@@ -345,7 +345,7 @@ def train(model, device, train_loader, optimizer, epoch):
         spike_data = encoding(data, TS)
         output = model(spike_data).permute(1, 0, 2)
         output = torch.sum(output, dim=0) / TS
-        label = one_hot_encode(target, model.module.num_classes).to(device)
+        label = one_hot_encode(target, model.module.num_classes, device)
         loss = F.mse_loss(output, label, reduction='mean')
 
         optimizer.zero_grad()
