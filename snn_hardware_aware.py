@@ -145,9 +145,12 @@ def get_reset_value():
             VRQ = VRQ * epoch / int(EPOCHS*0.8)
     return VRQ
 
-def reset(s, v):
+def reset(s, v, alpha):
     if HW_AWARE == 'yes':
-        v_reset = torch.full_like(v, get_reset_value(), device=device)
+        if args.train:
+            v_reset = torch.full_like(v, get_reset_value(), device=device) * alpha
+        else:
+            v_reset = torch.full_like(v, get_reset_value(), device=device)
     else:
         v_reset = torch.zeros_like(v, device=device)
     return torch.where(torch.eq(s, 1), v_reset, v)
@@ -327,8 +330,9 @@ class conv2d_layer(nn.Conv2d):
                     v = dv[:,t,:,:,:]
             else:
                 v = v + dv[:,t,:,:,:]
-            output = fire(v, self.vth, compute_alpha(self.weight).view(-1,1,1))
-            v = reset(output, v)
+            alpha = compute_alpha(self.weight).view(-1, 1, 1)
+            output = fire(v, self.vth, alpha)
+            v = reset(output, v, alpha)
             olist.append(output)
 
         output = torch.stack(olist, dim=1)
@@ -407,7 +411,7 @@ def test(model, device, test_loader):
             correct += pred.eq(target.view_as(pred)).sum().item()
         print('Time: {:.2f}'.format(time.time() - test_tstart))
     accuracy = 100. * correct / len(test_loader.dataset)
-    print('\nTest set: Accuracy: {}/{} ({:.1f}%)\n'.format(correct, len(test_loader.dataset), accuracy))
+    print('\nAccuracy: {}/{} ({:.1f}%)\n'.format(correct, len(test_loader.dataset), accuracy))
     return accuracy
 
 print("Use", torch.cuda.device_count(), "GPUs")
@@ -428,14 +432,14 @@ scheduler = MultiStepLR(optimizer, milestones=DECAY_STEPS, gamma=GAMMA)
 
 if args.train:
     print("Training start....")
-    acc = test(model, device, test_loader)
+    acc = test(model, device, train_loader)
     for i in range(1, EPOCHS + 1):
         epoch = i
         epoch_tstart = time.time()
         print("Learning rate: {}".format(optimizer.param_groups[0]['lr']))
         
         train(model, device, train_loader, optimizer)
-        test_acc = test(model, device, test_loader)
+        test_acc = test(model, device, train_loader)
 
         if save_model != None and (test_acc > acc) and epoch >= int(EPOCHS*0.8):
             acc = test_acc

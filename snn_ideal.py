@@ -204,7 +204,7 @@ def test(model, device, test_loader, epoch):
             pred = output.argmax(dim=1, keepdim=True)
             correct += pred.eq(target.view_as(pred)).sum().item()
     accuracy = 100. * correct / len(test_loader.dataset)
-    print('\nTest set: Accuracy: {}/{} ({:.1f}%)\n'.format(correct, len(test_loader.dataset), accuracy))
+    print('\nAccuracy: {}/{} ({:.1f}%)\n'.format(correct, len(test_loader.dataset), accuracy))
     return accuracy
 
 print("Use", torch.cuda.device_count(), "GPUs")
@@ -225,13 +225,13 @@ scheduler = MultiStepLR(optimizer, milestones=DECAY_STEPS, gamma=GAMMA)
 
 if args.train:
     print("Training start....")
-    acc = test(model, device, test_loader, 0)
+    acc = test(model, device, train_loader, 0)
     for epoch in range(1, EPOCHS + 1):
         epoch_tstart = time.time()
         print("Learning rate: {}".format(optimizer.param_groups[0]['lr']))
 
         train(model, device, train_loader, optimizer, epoch)
-        test_acc = test(model, device, test_loader, epoch)
+        test_acc = test(model, device, train_loader, epoch)
 
         if save_model != None and (test_acc > acc):
             acc = test_acc
