@@ -211,7 +211,7 @@ print("Use", torch.cuda.device_count(), "GPUs")
 model = nn.DataParallel(Net(), dim=0).to(device)
 
 if load_model != None:
-    model.load_state_dict(torch.load(load_model))
+    model.load_state_dict(torch.load(load_model, weights_only=True))
     model.eval()
 
 if args.opt == 'adam':
