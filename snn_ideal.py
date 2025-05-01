@@ -32,6 +32,8 @@ parser.add_argument('--opt', default='adadelta', metavar='OPT', choices=['adam',
                     help='set optimizer {adam, adadelta, sgd} (default: adadelta)')
 parser.add_argument('--a', type=float, default=1.0, metavar='A',
                     help='set gradient delta function width (default: 1.0)')
+parser.add_argument('--dataset', default='bottled-drinks', metavar='DATASET', choices=['bottled-drinks', 'MNIST'],
+                    help='set dataset {bottled-drinks, MNIST} (default: bottled-drinks)')
 
 args = parser.parse_args()
 print(args)
@@ -55,15 +57,26 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(device)
 
 # Load dataset
-train_images = torch.Tensor(np.load('./dataset/DRINK/train-images.npy'))
-train_labels = torch.LongTensor(np.load('./dataset/DRINK/train-labels.npy'))
-test_images = torch.Tensor(np.load('./dataset/DRINK/test-images.npy'))
-test_labels = torch.LongTensor(np.load('./dataset/DRINK/test-labels.npy'))
+if args.dataset == 'MNIST':
+    from torchvision import datasets, transforms
+    transform = transforms.Compose([
+        transforms.Resize((16, 16)), # Resize to 16x16
+        transforms.ToTensor(),
+        transforms.Normalize((0.1307,), (0.3081,))
+    ])
+    train_dataset = datasets.MNIST('./dataset', train=True, download=True, transform=transform)
+    test_dataset = datasets.MNIST('./dataset', train=False, transform=transform)
 
-train_dataset = data.TensorDataset(train_images, train_labels)
+else:  # bottled-drinks dataset
+    train_images = torch.Tensor(np.load('./dataset/DRINK/train-images.npy'))
+    train_labels = torch.LongTensor(np.load('./dataset/DRINK/train-labels.npy'))
+    test_images = torch.Tensor(np.load('./dataset/DRINK/test-images.npy'))
+    test_labels = torch.LongTensor(np.load('./dataset/DRINK/test-labels.npy'))
+
+    train_dataset = data.TensorDataset(train_images, train_labels)
+    test_dataset = data.TensorDataset(test_images, test_labels)
+
 train_loader = data.DataLoader(train_dataset, batch_size=BS, shuffle=True)
-
-test_dataset = data.TensorDataset(test_images, test_labels)
 test_loader = data.DataLoader(test_dataset, batch_size=BS, shuffle=False)
 
 class Fire(torch.autograd.Function):
@@ -138,8 +151,13 @@ class conv2d_layer(nn.Conv2d):
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
-        self.in_channels = 3
-        self.num_classes = 6
+        # Set input channels based on dataset
+        if args.dataset == 'MNIST':
+            self.in_channels = 1
+            self.num_classes = 10 # MNIST has 10 classes (digits 0-9)
+        else:  # bottled-drinks
+            self.in_channels = 3
+            self.num_classes = 6
         self.layer1 = conv2d_layer(in_channels=self.in_channels, out_channels=16, kernel_size=4)
         self.layer2 = conv2d_layer(in_channels=16, out_channels=16, kernel_size=4)
         self.layer3 = conv2d_layer(in_channels=16, out_channels=16, kernel_size=4)
